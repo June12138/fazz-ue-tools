@@ -15,5 +15,5 @@ public:
     // ~FazzFunctionLib();  // 可移除
 
     UFUNCTION(BlueprintCallable, Category = "Fazz Utilities")  // 添加 Category 以便蓝图分类
-    static FVector2D AngleToScreenPosition(UObject* WorldContextObject, FRotator InAngle);
+    static FVector2D AngleToScreenPosition(UObject* WorldContextObject, FRotator InAngle, bool ZeroCenter = false);
 };
