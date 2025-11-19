@@ -40,10 +40,10 @@ public:
 	UCurveFloat *RecoilCurve;
 	// 每次后座时长
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
-	float RecoilDuration;
+	float RecoilDuration = 2;
 	// 当前后座进度
-	float RecoilProgress;
+	float RecoilProgress = 0;
 	// 后坐力力度
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
-	FVector2D RecoilForce;
+	FVector2D RecoilForce = FVector2D(0.1f, -0.1f);
 };

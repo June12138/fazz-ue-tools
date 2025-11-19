@@ -42,31 +42,44 @@ void UCPP_WeaponRecoilComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 FVoidCoroutine UCPP_WeaponRecoilComponent::RecoilCoroutine()
 {
-    if (bRecoilCoroutineActive) co_return;
+    if (bRecoilCoroutineActive) {
+		UE_LOG(LogTemp, Warning, TEXT("RecoilCoroutine is already active"));
+		co_return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Starting RecoilCoroutine"));
 	bRecoilCoroutineActive = true;
 	while (true){
 		float DeltaTime = GetWorld()->GetDeltaSeconds();
 		RecoilProgress += DeltaTime;
-		float Alpha = RecoilProgress / RecoilDuration;
-		if (Alpha >= 1.0f){
+		float Progress = RecoilProgress / RecoilDuration;
+		if (Progress >= 1.0f){
 			RecoilProgress = 0.0f;
+			UE_LOG(LogTemp, Warning, TEXT("Next Bullet"));
 			if (!bRecoiling){
 				break;
 			}
 		}
+		float Alpha = RecoilCurve->GetFloatValue(Progress);
 		OwnerController->AddYawInput(RecoilForce.X * Alpha);
 		OwnerController->AddPitchInput(RecoilForce.Y * Alpha);
+		UE_LOG(LogTemp, Warning, TEXT("RecoilCoroutine: %f"), Alpha);
 		co_await UE5Coro::Latent::NextTick();
 	}
 	bRecoilCoroutineActive = false;
+	UE_LOG(LogTemp, Warning, TEXT("Ending RecoilCoroutine"));
 }
 
 void UCPP_WeaponRecoilComponent::StartRecoil()
 {
-	bRecoiling = true;
+	if (RecoilCurve){
+		RecoilCoroutine();
+		bRecoiling = true;
+	}else{
+		UE_LOG(LogTemp, Error, TEXT("RecoilCurve is not set"));
+	}
 }
 
 void UCPP_WeaponRecoilComponent::EndRecoil()
 {
-	bRecoiling = true;
+	bRecoiling = false;
 }
