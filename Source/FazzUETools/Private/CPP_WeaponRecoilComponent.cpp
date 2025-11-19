@@ -19,7 +19,14 @@ UCPP_WeaponRecoilComponent::UCPP_WeaponRecoilComponent()
 void UCPP_WeaponRecoilComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn){
+		UE_LOG(LogTemp, Error, TEXT("Owner of UCPP_WeaponRecoilComponent is not ACPP_Pawn"));
+	}
+	OwnerController = Cast<APlayerController>(OwnerPawn->GetController());
+	if (!OwnerController){
+		UE_LOG(LogTemp, Error, TEXT("Owner of UCPP_WeaponRecoilComponent is not ACPP_PlayerController"));
+	}
 	// ...
 	
 }
@@ -35,15 +42,31 @@ void UCPP_WeaponRecoilComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 FVoidCoroutine UCPP_WeaponRecoilComponent::RecoilCoroutine()
 {
-    return FVoidCoroutine();
+    if (bRecoilCoroutineActive) co_return;
+	bRecoilCoroutineActive = true;
+	while (true){
+		float DeltaTime = GetWorld()->GetDeltaSeconds();
+		RecoilProgress += DeltaTime;
+		float Alpha = RecoilProgress / RecoilDuration;
+		if (Alpha >= 1.0f){
+			RecoilProgress = 0.0f;
+			if (!bRecoiling){
+				break;
+			}
+		}
+		OwnerController->AddYawInput(RecoilForce.X * Alpha);
+		OwnerController->AddPitchInput(RecoilForce.Y * Alpha);
+		co_await UE5Coro::Latent::NextTick();
+	}
+	bRecoilCoroutineActive = false;
 }
 
 void UCPP_WeaponRecoilComponent::StartRecoil()
 {
-
+	bRecoiling = true;
 }
 
 void UCPP_WeaponRecoilComponent::EndRecoil()
 {
-
+	bRecoiling = true;
 }

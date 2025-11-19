@@ -29,4 +29,21 @@ public:
 	void StartRecoil();
 	UFUNCTION(BlueprintCallable, category = "Recoil")
 	void EndRecoil();
+	APawn* OwnerPawn;
+	APlayerController* OwnerController;
+	// 用于标记动画协程是否在运行
+	bool bRecoilCoroutineActive;
+	// 是否在后座中
+	bool bRecoiling;
+	// 后坐力曲线
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
+	UCurveFloat *RecoilCurve;
+	// 每次后座时长
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
+	float RecoilDuration;
+	// 当前后座进度
+	float RecoilProgress;
+	// 后坐力力度
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
+	FVector2D RecoilForce;
 };
