@@ -26,6 +26,7 @@ public class FazzUETools : ModuleRules
 			new string[]
 			{
 				"Core",
+				"UE5Coro"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
