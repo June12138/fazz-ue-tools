@@ -10,7 +10,7 @@ UCPP_WeaponRecoilComponent::UCPP_WeaponRecoilComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
+	SetComponentTickEnabled(false);
 	// ...
 }
 
@@ -21,23 +21,19 @@ void UCPP_WeaponRecoilComponent::BeginPlay()
 	Super::BeginPlay();
 	OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn){
-		UE_LOG(LogTemp, Error, TEXT("Owner of UCPP_WeaponRecoilComponent is not ACPP_Pawn"));
+		UE_LOG(LogTemp, Error, TEXT("Owner of UCPP_WeaponRecoilComponent is not APawn"));
+		return;
 	}
-	OwnerController = Cast<APlayerController>(OwnerPawn->GetController());
-	if (!OwnerController){
-		UE_LOG(LogTemp, Error, TEXT("Owner of UCPP_WeaponRecoilComponent is not ACPP_PlayerController"));
-	}
-	// ...
-	
+	OwnerPawn->ReceiveControllerChangedDelegate.AddDynamic(this, &UCPP_WeaponRecoilComponent::RefreshOwnerController);
+	RefreshOwnerController(OwnerPawn, nullptr, OwnerPawn->GetController());
 }
-
-
-// Called every frame
-void UCPP_WeaponRecoilComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UCPP_WeaponRecoilComponent::RefreshOwnerController(APawn* Pawn, AController* OldController, AController* NewController)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
+	if (!OwnerPawn){
+		UE_LOG(LogTemp, Error, TEXT("Owner of UCPP_WeaponRecoilComponent is not APawn"));
+		return; 
+	}
+	OwnerController = Cast<APlayerController>(NewController);
 }
 
 FVoidCoroutine UCPP_WeaponRecoilComponent::RecoilCoroutine()
@@ -80,6 +76,10 @@ FVoidCoroutine UCPP_WeaponRecoilComponent::RecoilCoroutine()
 
 void UCPP_WeaponRecoilComponent::StartRecoil()
 {
+	if (!IsValid(OwnerController)){
+		UE_LOG(LogTemp, Error, TEXT("OwnerController is not set"));
+		return;
+	}
 	if (RecoilCurve){
 		RecoilCoroutine();
 		bRecoiling = true;

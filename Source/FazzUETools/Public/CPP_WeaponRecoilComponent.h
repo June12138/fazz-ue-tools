@@ -21,8 +21,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	// 后座协程
 	UFUNCTION(BlueprintCallable, meta = (Latent, LatentInfo = "LatentInfo"))
 	FVoidCoroutine RecoilCoroutine();
@@ -65,4 +63,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recover")
 	float RecoverSpeed = 5.f;
 	void ResetAccumlations();
+	UFUNCTION()
+	void RefreshOwnerController(APawn* Pawn, AController* OldController, AController* NewController);
 };
