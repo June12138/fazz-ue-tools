@@ -24,5 +24,11 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tokens", meta = (AllowPrivateAccess = "true"))
-	TArray<FAITokenStruct> Tokens;
+	TMap<FName, FAITokenStruct> Tokens;
+	UFUNCTION(BlueprintCallable, Category = "AIToken")
+	bool GrantToken(AActor* Requirer, FName TokenKey);
+	UFUNCTION(BlueprintCallable, Category = "AIToken")
+	void RetractToken(AActor* Holder, FName TokenKey);
+	UFUNCTION(BlueprintCallable, Category = "AIToken")
+	bool ActorHasToken(AActor* Actor, FName TokenKey);
 };

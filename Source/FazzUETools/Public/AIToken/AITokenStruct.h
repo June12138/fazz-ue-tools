@@ -9,9 +9,9 @@ struct FAITokenStruct
 {
 	GENERATED_BODY()
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Token")
-	FName Key;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Token")
 	TArray<AActor*> Holders;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Token")
-	int MaxHolders;
+	int MaxHoldersCount;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Token")
+	int CurrentHoldersCount;
 };
