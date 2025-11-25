@@ -86,7 +86,7 @@ void UCPP_WeaponRecoilComponent::StartRecoil()
 		return;
 	}
 	if (RecoilCurve){
-		//ResetAccumlations();
+		ResetAccumlations();
 		bRecoiling = true;
 		bIsRecovering = false;
 		RecoilCoroutine();
