@@ -10,7 +10,7 @@ UCPP_WeaponSpreadComponent::UCPP_WeaponSpreadComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
+	SetComponentTickEnabled(false);
 	// ...
 }
 
@@ -19,6 +19,7 @@ UCPP_WeaponSpreadComponent::UCPP_WeaponSpreadComponent()
 void UCPP_WeaponSpreadComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	CurrentSpread = CurrentBaseSpread;
 }
 
 
@@ -30,9 +31,9 @@ void UCPP_WeaponSpreadComponent::TickComponent(float DeltaTime, ELevelTick TickT
 }
 void UCPP_WeaponSpreadComponent::AddFireSpread()
 {
-	CurrentFireSpread = FMath::Clamp(CurrentFireSpread + FireSpreadIncrement, FVector2D(0, 0), FireSpreadMax);
-	FireSpreadDecrease();
-	UpdateCurrentSpread();
+	if (IsADS) return;
+	CurrentSpread = FMath::Clamp(CurrentSpread + FireSpreadIncrement, FVector2D(0, 0), FireSpreadMax + CurrentBaseSpread);
+	SpreadLerpCoroutine();
 }
 FVector2D UCPP_WeaponSpreadComponent::GetRandomSpread(){
 	if (IsADS){
@@ -43,29 +44,32 @@ FVector2D UCPP_WeaponSpreadComponent::GetRandomSpread(){
 	}
 }
 
-FVoidCoroutine UCPP_WeaponSpreadComponent::FireSpreadDecrease()
+FVoidCoroutine UCPP_WeaponSpreadComponent::SpreadLerpCoroutine()
 {
-	if (FireSpreadDecreaseRunning) co_return;
-	FireSpreadDecreaseRunning = true;
+	if (bLerpCoroutineRunning) co_return;
+	bLerpCoroutineRunning = true;
 	// 获取世界DeltaTime
 	float WorldDeltaTime = GetWorld()->GetDeltaSeconds();
-	while (CurrentFireSpread != FVector2D(0, 0)){
-		CurrentFireSpread = FMath::Vector2DInterpConstantTo(CurrentFireSpread, FVector2D(0, 0), WorldDeltaTime, FireSpreadDecrementRate);
-		UpdateCurrentSpread();
+	while (CurrentSpread != CurrentBaseSpread){
+		CurrentSpread = FMath::Vector2DInterpConstantTo(CurrentSpread, CurrentBaseSpread, WorldDeltaTime, CurrentInterpolationRate);
 		co_await UE5Coro::Latent::NextTick();
+		//UE_LOG(LogTemp, Warning, TEXT("CurrentSpread: %s"), *CurrentSpread.ToString());
 	}
-	FireSpreadDecreaseRunning = false;
-}
-
-void UCPP_WeaponSpreadComponent::UpdateCurrentSpread()
-{
-	CurrentSpread = CurrentBaseSpread + CurrentFireSpread;
+	bLerpCoroutineRunning = false;
 }
 
 void UCPP_WeaponSpreadComponent::StartADS(){
 	IsADS = true;
+	CurrentBaseSpread = ADSBaseSpread;
+	SpreadLerpCoroutine();
 }
 
 void UCPP_WeaponSpreadComponent::EndADS(){
 	IsADS = false;
+	CurrentBaseSpread = DefaultBaseSpread;
+	SpreadLerpCoroutine();
+}
+
+void UCPP_WeaponSpreadComponent::SetBaseSpread_Implementation(FName Key){
+
 }

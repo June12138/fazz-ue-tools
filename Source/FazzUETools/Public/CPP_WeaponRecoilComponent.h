@@ -61,7 +61,7 @@ public:
 	FVector2D RecoverResult = FVector2D::ZeroVector;
 	void SetRecoverResult();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recover")
-	float RecoverSpeed = 5.f;
+	float RecoverSpeed = 15.f;
 	void ResetAccumlations();
 	UFUNCTION()
 	void RefreshOwnerController(APawn* Pawn, AController* OldController, AController* NewController);

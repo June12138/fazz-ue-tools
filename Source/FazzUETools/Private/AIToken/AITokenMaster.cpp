@@ -9,8 +9,8 @@ UAITokenMaster::UAITokenMaster()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-	Tokens.Add(FName("LightAttack"), FAITokenStruct(TArray<AActor*>(),6, 0));
-	Tokens.Add(FName("HeavyAttack"), FAITokenStruct(TArray<AActor*>(),3, 0));
+	Tokens.Add(FName("LightAttack"), FAITokenStruct(TArray<AActor*>(),6));
+	Tokens.Add(FName("HeavyAttack"), FAITokenStruct(TArray<AActor*>(),3));
 	// ...
 }
 
@@ -42,10 +42,9 @@ bool UAITokenMaster::GrantToken(AActor* Requirer, FName TokenKey)
 			UE_LOG(LogTemp, Warning, TEXT("Actor %s already has token %s"), *Requirer->GetName(), *TokenKey.ToString());
 			return false;
 		}
-		if (Token->CurrentHoldersCount < Token->MaxHoldersCount)
+		if (Token->Holders.Num() < Token->MaxHoldersCount)
 		{
 			Token->Holders.Add(Requirer);
-			Token->CurrentHoldersCount++;
 			return true;
 		}
 	}
@@ -59,7 +58,6 @@ void UAITokenMaster::RetractToken(AActor* Holder, FName TokenKey)
 		if (Token->Holders.Contains(Holder))
 		{
 			Token->Holders.Remove(Holder);
-			Token->CurrentHoldersCount--;
 			return;
 		}
 	}

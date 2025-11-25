@@ -12,6 +12,4 @@ struct FAITokenStruct
 	TArray<AActor*> Holders;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Token")
 	int MaxHoldersCount;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Token")
-	int CurrentHoldersCount;
 };
