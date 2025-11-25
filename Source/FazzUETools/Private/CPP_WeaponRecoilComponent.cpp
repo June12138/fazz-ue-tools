@@ -44,7 +44,6 @@ FVoidCoroutine UCPP_WeaponRecoilComponent::RecoilCoroutine()
 	}
 	//UE_LOG(LogTemp, Warning, TEXT("Starting RecoilCoroutine"));
 	bRecoilCoroutineActive = true;
-	ResetAccumlations();
 	RecoilProgress = 0.0f;
 	FVector2D TotalRecoilThisShot = FVector2D::ZeroVector; // 本轮射击的总后坐力，Debug用的
 	while (true){
@@ -54,7 +53,7 @@ FVoidCoroutine UCPP_WeaponRecoilComponent::RecoilCoroutine()
 		float Alpha = RecoilCurve->GetFloatValue(Progress);
 		FVector2D RecoilThisFrame = RecoilForce * DeltaTime * Alpha;
 		// 积攒后坐力
-		RecoilAccumulation += (RecoilThisFrame);
+		RecoilAccumulator += (RecoilThisFrame);
 		// 输入
 		OwnerController->AddYawInput(RecoilThisFrame.X);
 		OwnerController->AddPitchInput(RecoilThisFrame.Y);
@@ -86,9 +85,7 @@ void UCPP_WeaponRecoilComponent::StartRecoil()
 		return;
 	}
 	if (RecoilCurve){
-		ResetAccumlations();
 		bRecoiling = true;
-		bIsRecovering = false;
 		RecoilCoroutine();
 	}else{
 		UE_LOG(LogTemp, Error, TEXT("RecoilCurve is not set"));
@@ -111,76 +108,69 @@ FVoidCoroutine UCPP_WeaponRecoilComponent::RecoverCoroutine()
 		co_return;
 	}
 	bIsRecovering = true;
-    // 计算初始回中目标
-    SetRecoverResult();
-    FVector2D TargetRecovery = RecoverResult;
-    // 如果无需回中，直接返回
-    if (TargetRecovery.SizeSquared() < KINDA_SMALL_NUMBER)
+    while (bIsRecovering && !bRecoilCoroutineActive)
     {
-		ResetAccumlations();
-        co_return;
-    }
-    while (bIsRecovering)
-    {
+		SetRemainingRecovery();
         float DeltaTime = GetWorld()->GetDeltaSeconds();
         // 计算本帧回中量：回中速度 × 帧时间
         float RecoveryThisFrame = RecoverSpeed * DeltaTime;
         // 计算当前剩余回中量的长度
-        float RemainingLength = TargetRecovery.Size();
+        float RemainingLength = RemainingRecovery.Size();
         // 如果剩余量很小或本帧回中量超过剩余量，则完成回中
         if (RemainingLength <= RecoveryThisFrame)
         {
             // 施加剩余的全部回中量
-            OwnerController->AddYawInput(-TargetRecovery.X);
-            OwnerController->AddPitchInput(-TargetRecovery.Y);
+            OwnerController->AddYawInput(-RemainingRecovery.X);
+            OwnerController->AddPitchInput(-RemainingRecovery.Y);
+			//UE_LOG(LogTemp, Warning, TEXT("RecoverCoroutine Complete"));
+			// 重置累积量
+			ResetAccumlatiors();
             break;
         }
         // 计算本帧回中向量：按比例缩放到回中速度
-        FVector2D RecoveryThisFrameVector = TargetRecovery.GetSafeNormal() * RecoveryThisFrame;
+        FVector2D RecoveryThisFrameVector = RemainingRecovery.GetSafeNormal() * RecoveryThisFrame;
         // 施加本帧回中量
         OwnerController->AddYawInput(-RecoveryThisFrameVector.X);
         OwnerController->AddPitchInput(-RecoveryThisFrameVector.Y);
         // 更新剩余回中量
-        TargetRecovery -= RecoveryThisFrameVector;
+		RecoilAccumulator -= RecoveryThisFrameVector;
         co_await UE5Coro::Latent::NextTick();
     }
-    // 重置累积量
-	ResetAccumlations();
 	bIsRecovering = false;
 }
 
 void UCPP_WeaponRecoilComponent::LookInput(FVector2D InputValue)
 {
 	if (bRecoilCoroutineActive){
-		ControlInputAccumulation += InputValue;
+		ControlInputAccumulator += InputValue;
 	}
 }
 
-void UCPP_WeaponRecoilComponent::SetRecoverResult()
+void UCPP_WeaponRecoilComponent::SetRemainingRecovery()
 {
 	for (int32 i = 0; i < 2; ++i){
         // 计算理论净补偿量（后坐力 + 玩家输入）
-		float Recoil = RecoilAccumulation[i];
-		float Control = ControlInputAccumulation[i];
-        float Net = RecoilAccumulation[i] + ControlInputAccumulation[i];
+		float Recoil = RecoilAccumulator[i];
+		float Control = ControlInputAccumulator[i];
+        float Net = RecoilAccumulator[i] + ControlInputAccumulator[i];
         // 玩家操作没有抵消后座力
         bool bUnderCompensate = (FMath::Sign(Net) == FMath::Sign(Recoil));
 		// 玩家操作和后座在同一方向
 		bool bControlRecoilAlign = (FMath::Sign(Control) == FMath::Sign(Recoil));
 		if (bUnderCompensate && !bControlRecoilAlign){
-			RecoverResult[i] = Net;
+			RemainingRecovery[i] = Net;
 		}else{
-			RecoverResult[i] = 0.0f;
+			RemainingRecovery[i] = 0.0f;
 		}
     }
 	// Log RecoilAccumulation和ControlInputAccumulation
-	//UE_LOG(LogTemp, Warning, TEXT("RecoilAccumulation: %s"), *RecoilAccumulation.ToString());
-	//UE_LOG(LogTemp, Warning, TEXT("ControlInputAccumulation: %s"), *ControlInputAccumulation.ToString());
-	//UE_LOG(LogTemp, Warning, TEXT("RecoverResult: %s"), *RecoverResult.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("RecoilAccumulator: %s"), *RecoilAccumulator.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("ControlInputAccumulator: %s"), *ControlInputAccumulator.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("RemainingRecovery: %s"), *RemainingRecovery.ToString());
 }
 
-void UCPP_WeaponRecoilComponent::ResetAccumlations()
+void UCPP_WeaponRecoilComponent::ResetAccumlatiors()
 {
-	RecoilAccumulation = FVector2D::ZeroVector;
-	ControlInputAccumulation = FVector2D::ZeroVector;
+	RecoilAccumulator = FVector2D::ZeroVector;
+	ControlInputAccumulator = FVector2D::ZeroVector;
 }

@@ -48,7 +48,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recoil")
 	FVector2D RecoilForce = FVector2D(1.f, -5.f);
 	// 后坐力积攒值，用于后座回中
-	FVector2D RecoilAccumulation = FVector2D::ZeroVector;
+	FVector2D RecoilAccumulator = FVector2D::ZeroVector;
 	// 后座回中协程
 	UFUNCTION(BlueprintCallable, meta = (Latent, LatentInfo = "LatentInfo"))
 	FVoidCoroutine RecoverCoroutine();
@@ -56,13 +56,13 @@ public:
 	UFUNCTION(BlueprintCallable, category = "Input")
 	void LookInput(FVector2D InputValue);
 	// 玩家压枪时的输入总和
-	FVector2D ControlInputAccumulation = FVector2D::ZeroVector;
+	FVector2D ControlInputAccumulator = FVector2D::ZeroVector;
 	// 射击结束后的回中输入
-	FVector2D RecoverResult = FVector2D::ZeroVector;
-	void SetRecoverResult();
+	FVector2D RemainingRecovery = FVector2D::ZeroVector;
+	void SetRemainingRecovery();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Recover")
 	float RecoverSpeed = 15.f;
-	void ResetAccumlations();
+	void ResetAccumlatiors();
 	UFUNCTION()
 	void RefreshOwnerController(APawn* Pawn, AController* OldController, AController* NewController);
 };
