@@ -30,3 +30,10 @@ FVector2D UFazzFunctionLib::AngleToScreenPosition(UObject* WorldContextObject, F
     }
     return ScreenPosition;
 }
+
+void UFazzFunctionLib::ClientTravel(APlayerController* PlayerController, const FString& URL, ETravelType TravelType) {
+
+    if (PlayerController) {
+        PlayerController->ClientTravel(URL, TravelType);
+    }
+}

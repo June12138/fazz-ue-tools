@@ -16,4 +16,6 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Fazz Utilities")  // 添加 Category 以便蓝图分类
     static FVector2D AngleToScreenPosition(UObject* WorldContextObject, FRotator InAngle, bool ZeroCenter = false);
+    UFUNCTION(BlueprintCallable, Category = "Fazz Utilities")
+    static void ClientTravel(APlayerController* PlayerController, const FString& URL, ETravelType TravelType);
 };
