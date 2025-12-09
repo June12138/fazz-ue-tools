@@ -9,6 +9,7 @@
 
 class UInputAction;
 class UAbilitySystemComponent;
+class UGameplayAbility;
 USTRUCT(BlueprintType)
 struct FAbilityInputConfig
 {
@@ -30,15 +31,19 @@ public:
     UCPP_AbilityInputManager();
 
     virtual void BeginPlay() override;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability Management")
+    // 能力设置
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability Management")
     TMap<UInputAction*, FAbilityInputConfig> Configs;
+    // 需要赋予Owner的能力
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability Management")
+    TArray<TSubclassOf<UGameplayAbility>> Abilities;
 
 private:
     void BindInputActions();
 
-    UAbilitySystemComponent* GetAbilitySystemComponent() const;
-
+    void SetAbilitySystemComponent();
+    UAbilitySystemComponent* ASC;
     void OnInputPressed(UInputAction* InputAction);
     void OnInputReleased(UInputAction* InputAction);
+    void GiveAbilities();
 };

@@ -8,26 +8,32 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemComponent.h"
+#include "Abilities/GameplayAbility.h"
 
-UCPP_AbilityInputManager::UCPP_AbilityInputManager()
-{
-    // Constructor if needed
+UCPP_AbilityInputManager::UCPP_AbilityInputManager(){
+
 }
 
-void UCPP_AbilityInputManager::BeginPlay()
-{
+void UCPP_AbilityInputManager::BeginPlay(){
     Super::BeginPlay();
     BindInputActions();
+    SetAbilitySystemComponent();
+    GiveAbilities();
 }
-
-void UCPP_AbilityInputManager::BindInputActions()
-{
+void UCPP_AbilityInputManager::GiveAbilities(){
+    if (!GetOwner()->HasAuthority()) return;
+    if (!ASC){
+        UE_LOG(LogTemp, Error, TEXT("AbilityInputManager: Owner does not have AbilitySystemComponent"));
+    }
+    for (const TSubclassOf<UGameplayAbility>& Ability : Abilities){
+        ASC->GiveAbility(FGameplayAbilitySpec(Ability, 1, INDEX_NONE, this));
+    }
+}
+void UCPP_AbilityInputManager::BindInputActions(){
     AActor* Owner = GetOwner();
     if (!Owner) return;
-
     APlayerController* PC = Cast<APlayerController>(Owner->GetInstigatorController());
-    if (!PC) 
-    {
+    if (!PC) {
         // Alternatively, if attached to Character, get Controller from Character
         ACharacter* Char = Cast<ACharacter>(Owner);
         if (Char)
@@ -43,51 +49,42 @@ void UCPP_AbilityInputManager::BindInputActions()
     UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PC->InputComponent);
     if (!EnhancedInputComponent) return;
 
-    for (const auto& Pair : Configs)
-    {
+    for (const auto& Pair : Configs){
         UInputAction* IA = Pair.Key;
         const FAbilityInputConfig& Config = Pair.Value;
-
         if (IA)
         {
-            // Bind Pressed
             EnhancedInputComponent->BindAction(IA, ETriggerEvent::Started, this, &UCPP_AbilityInputManager::OnInputPressed, IA);
-
-            // Bind Released (use Completed for release)
             EnhancedInputComponent->BindAction(IA, ETriggerEvent::Completed, this, &UCPP_AbilityInputManager::OnInputReleased, IA);
         }
     }
 }
 
-UAbilitySystemComponent* UCPP_AbilityInputManager::GetAbilitySystemComponent() const
-{
+void UCPP_AbilityInputManager::SetAbilitySystemComponent(){
     AActor* Owner = GetOwner();
-    if (!Owner) return nullptr;
-
-    // Assuming the AbilitySystemComponent is on the same Actor or Character
-    return Owner->FindComponentByClass<UAbilitySystemComponent>();
+    if (!Owner) return;
+    ASC = Owner->FindComponentByClass<UAbilitySystemComponent>();
 }
 
-void UCPP_AbilityInputManager::OnInputPressed(UInputAction* InputAction)
-{
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-    if (!ASC) return;
-
-    const FAbilityInputConfig* Config = Configs.Find(InputAction);
-    if (Config)
-    {
+void UCPP_AbilityInputManager::OnInputPressed(UInputAction* InputAction){
+    if (!ASC){
+        UE_LOG(LogTemp, Error, TEXT("AbilityInputManager: Owner does not have AbilitySystemComponent"));
+        return;
+    }
+    if (Configs.Contains(InputAction)){
+        const FAbilityInputConfig* Config = Configs.Find(InputAction);
         ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Config->AbilityTag), true);
     }
 }
 
-void UCPP_AbilityInputManager::OnInputReleased(UInputAction* InputAction)
-{
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-    if (!ASC) return;
-
-    const FAbilityInputConfig* Config = Configs.Find(InputAction);
-    if (Config)
-    {
+void UCPP_AbilityInputManager::OnInputReleased(UInputAction* InputAction){
+    if (!ASC){
+        UE_LOG(LogTemp, Error, TEXT("AbilityInputManager: Owner does not have AbilitySystemComponent"));
+        return;
+    } 
+    if (Configs.Contains(InputAction)){
+        const FAbilityInputConfig* Config = Configs.Find(InputAction);
         ASC->AddLooseGameplayTag(Config->ReleaseTag);
+        ASC->RemoveLooseGameplayTag(Config->ReleaseTag);
     }
 }
