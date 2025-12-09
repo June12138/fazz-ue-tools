@@ -26,5 +26,11 @@
 			"Name": "UE5Coro",
 			"Enabled": true
 		}
+	],
+	"Dependencies": [
+    	{
+    	    "Name": "EnhancedInput",
+    	    "Type": "Runtime"
+    	}
 	]
 }

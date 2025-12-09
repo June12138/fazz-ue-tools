@@ -26,7 +26,10 @@ public class FazzUETools : ModuleRules
 			new string[]
 			{
 				"Core",
-				"UE5Coro"
+				"UE5Coro",
+				"EnhancedInput",
+				"GameplayAbilities",
+    			"GameplayTags"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
