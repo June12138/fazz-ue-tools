@@ -16,7 +16,8 @@ UCPP_AbilityInputManager::UCPP_AbilityInputManager(){
 
 void UCPP_AbilityInputManager::BeginPlay(){
     Super::BeginPlay();
-    BindInputActions();
+    // beginPlay中绑定按键容易导致复活后出bug，还是要手动绑定
+    //BindInputActions();
     SetAbilitySystemComponent();
     GiveAbilities();
 }

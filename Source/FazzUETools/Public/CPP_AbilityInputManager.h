@@ -37,10 +37,8 @@ public:
     // 需要赋予Owner的能力
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability Management")
     TArray<TSubclassOf<UGameplayAbility>> Abilities;
-
-private:
     void BindInputActions();
-
+private:
     void SetAbilitySystemComponent();
     UAbilitySystemComponent* ASC;
     void OnInputPressed(UInputAction* InputAction);
