@@ -29,7 +29,8 @@ public class FazzUETools : ModuleRules
 				"UE5Coro",
 				"EnhancedInput",
 				"GameplayAbilities",
-    			"GameplayTags"
+    			"GameplayTags",
+				"UnrealEd"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

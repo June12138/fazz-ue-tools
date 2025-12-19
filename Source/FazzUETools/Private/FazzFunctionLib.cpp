@@ -3,15 +3,13 @@
 
 #include "FazzFunctionLib.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Editor/UnrealEdEngine.h"
 
-FVector2D UFazzFunctionLib::AngleToScreenPosition(UObject* WorldContextObject, FRotator InAngle, bool ZeroCenter){
-    // 获取PlayerCameraController
-    UWorld* World = WorldContextObject->GetWorld();
-    APlayerController* PlayerController = World->GetFirstPlayerController();
+FVector2D UFazzFunctionLib::AngleToScreenPosition(APlayerController* PlayerController, FRotator InAngle, bool ZeroCenter){
     APlayerCameraManager* PlayerCameraManager = PlayerController->PlayerCameraManager;
     // 获得ViewportSize
     FVector2D ViewportSize;
-    GEngine->GameViewport->GetViewportSize(ViewportSize);
+    PlayerController->GetLocalPlayer()->ViewportClient->GetViewportSize(ViewportSize);
     // 获取摄像机位置和旋转
     FVector CameraLocation = PlayerCameraManager->GetCameraLocation();
     FRotator CameraRotation = PlayerCameraManager->GetCameraRotation();

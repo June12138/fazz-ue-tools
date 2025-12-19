@@ -2,7 +2,6 @@
 
 
 #include "CPP_WeaponSpreadComponent.h"
-#include "UE5Coro/Public/UE5Coro.h"
 
 // Sets default values for this component's properties
 UCPP_WeaponSpreadComponent::UCPP_WeaponSpreadComponent()
@@ -11,7 +10,7 @@ UCPP_WeaponSpreadComponent::UCPP_WeaponSpreadComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	SetComponentTickEnabled(false);
-	// ...
+	SpreadDataMap.Add("Default", FWeaponSpreadData());
 }
 
 
@@ -19,7 +18,8 @@ UCPP_WeaponSpreadComponent::UCPP_WeaponSpreadComponent()
 void UCPP_WeaponSpreadComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentSpread = CurrentBaseSpread;
+	CurrentSpreadData = *SpreadDataMap.Find("Default");
+    CurrentSpread = CurrentSpreadData.BaseSpread;
 }
 
 
@@ -32,44 +32,64 @@ void UCPP_WeaponSpreadComponent::TickComponent(float DeltaTime, ELevelTick TickT
 void UCPP_WeaponSpreadComponent::AddFireSpread()
 {
 	if (IsADS) return;
-	CurrentSpread = FMath::Clamp(CurrentSpread + FireSpreadIncrement, FVector2D(0, 0), FireSpreadMax + CurrentBaseSpread);
+	CurrentSpread = FMath::Clamp(CurrentSpread + FireSpreadIncrement, FVector2D(0, 0), CurrentSpreadData.FireSpreadMax + CurrentSpreadData.BaseSpread);
 	SpreadLerpCoroutine();
 }
-FVector2D UCPP_WeaponSpreadComponent::GetRandomSpread(){
-	if (IsADS){
-		return FVector2D(0, 0);
-	}else{
-		FVector2D RandomSpread = FVector2D(FMath::RandRange(-CurrentSpread.X/2, CurrentSpread.X/2), FMath::RandRange(-CurrentSpread.Y/2, CurrentSpread.Y/2));
-		return RandomSpread;
-	}
+FVector2D UCPP_WeaponSpreadComponent::GetRandomSpread() const{
+	FVector2D RandomSpread = FVector2D(FMath::RandRange(-CurrentSpread.X/2, CurrentSpread.X/2), FMath::RandRange(-CurrentSpread.Y/2, CurrentSpread.Y/2));
+	return RandomSpread;
 }
 
-FVoidCoroutine UCPP_WeaponSpreadComponent::SpreadLerpCoroutine()
+FVoidCoroutine UCPP_WeaponSpreadComponent::SpreadLerpCoroutine(FForceLatentCoroutine)
 {
 	if (bLerpCoroutineRunning) co_return;
 	bLerpCoroutineRunning = true;
 	// 获取世界DeltaTime
 	float WorldDeltaTime = GetWorld()->GetDeltaSeconds();
-	while (CurrentSpread != CurrentBaseSpread){
-		CurrentSpread = FMath::Vector2DInterpConstantTo(CurrentSpread, CurrentBaseSpread, WorldDeltaTime, CurrentInterpolationRate);
+	while (CurrentSpread != CurrentSpreadData.BaseSpread){
+		CurrentSpread = FMath::Vector2DInterpConstantTo(CurrentSpread, CurrentSpreadData.BaseSpread, WorldDeltaTime, SpreadInterpolationRate);
 		co_await UE5Coro::Latent::NextTick();
 		//UE_LOG(LogTemp, Warning, TEXT("CurrentSpread: %s"), *CurrentSpread.ToString());
 	}
 	bLerpCoroutineRunning = false;
 }
-
+FVoidCoroutine UCPP_WeaponSpreadComponent::ADSLerpCoroutine(FForceLatentCoroutine){
+	SpreadLerpCoroutine();
+	if (bADSCoroutineRunning) co_return;
+	bADSCoroutineRunning = true;
+	while (true){
+		if (IsADS){
+			if (ADSAlpha != 1) ADSAlpha = FMath::FInterpConstantTo(ADSAlpha, 1, GetWorld()->GetDeltaSeconds(), 1/ADSTime); else break;
+		}else{
+			if (ADSAlpha != 0) ADSAlpha = FMath::FInterpConstantTo(ADSAlpha, 0, GetWorld()->GetDeltaSeconds(), 1/ADSTime); else break;
+		}
+        co_await UE5Coro::Latent::NextTick();
+		//UE_LOG(LogTemp, Warning, TEXT("Current ADSAlpha: %f"), ADSAlpha);
+	}
+	bADSCoroutineRunning = false;
+}
 void UCPP_WeaponSpreadComponent::StartADS(){
 	IsADS = true;
-	CurrentBaseSpread = ADSBaseSpread;
 	SpreadLerpCoroutine();
+	ADSLerpCoroutine();
 }
 
 void UCPP_WeaponSpreadComponent::EndADS(){
 	IsADS = false;
-	CurrentBaseSpread = DefaultBaseSpread;
 	SpreadLerpCoroutine();
+	ADSLerpCoroutine();
 }
 
-void UCPP_WeaponSpreadComponent::SetBaseSpread_Implementation(FName Key){
+void UCPP_WeaponSpreadComponent::SetSpreadData(FName Key){
+	if (SpreadDataMap.Contains(Key)){
+		CurrentSpreadData = *SpreadDataMap.Find(Key);
+	}
+}
 
+void UCPP_WeaponSpreadComponent::UpdateSpreadData_Implementation() {
+
+}
+
+FVector2D UCPP_WeaponSpreadComponent::GetSpread() const{
+	return CurrentSpread * (1-ADSAlpha) * (1-ADSSpreadMultiplier);
 }
