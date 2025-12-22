@@ -36,7 +36,8 @@ void UCPP_WeaponSpreadComponent::AddFireSpread()
 	SpreadLerpCoroutine();
 }
 FVector2D UCPP_WeaponSpreadComponent::GetRandomSpread() const{
-	FVector2D RandomSpread = FVector2D(FMath::RandRange(-CurrentSpread.X/2, CurrentSpread.X/2), FMath::RandRange(-CurrentSpread.Y/2, CurrentSpread.Y/2));
+	FVector2D Spread = GetSpread();
+	FVector2D RandomSpread = FVector2D(FMath::RandRange(-Spread.X/2, Spread.X/2), FMath::RandRange(-Spread.Y/2, Spread.Y/2));
 	return RandomSpread;
 }
 
